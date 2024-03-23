@@ -32,6 +32,12 @@ class RyujinxMainlineGenerator(Generator):
             st = os.stat("/userdata/system/switch/Ryujinx-LDN.AppImage")
             os.chmod("/userdata/system/switch/Ryujinx-LDN.AppImage", st.st_mode | stat.S_IEXEC)  
 
+        #pb avec les manettes xbox sinon (conflit sur les bibliotheques sdl de bato et de ryujinx)
+        if os.path.exists("/userdata/system/switch/extra/ryujinx/libSDL2.so"):
+            os.rename("/userdata/system/switch/extra/ryujinx/libSDL2.so","/userdata/system/switch/extra/ryujinx/libSDL2.so-ko")
+        if os.path.exists("/userdata/system/switch/extra/ryujinxavalonia/libSDL2.so"):
+            os.rename("/userdata/system/switch/extra/ryujinxavalonia/libSDL2.so","/userdata/system/switch/extra/ryujinxavalonia/libSDL2.so-ko")
+
         if not path.isdir(batoceraFiles.CONF + "/Ryujinx"):
             os.mkdir(batoceraFiles.CONF + "/Ryujinx")
         if not path.isdir(batoceraFiles.CONF + "/Ryujinx/system"):
@@ -101,14 +107,6 @@ class RyujinxMainlineGenerator(Generator):
                 data = json.load(read_file)
         else:
                 data = {}
-
-        if system.config['emulator'] == 'ryujinx-avalonia':
-            data['version'] = 42  #Avalonia Version needs to see 38
-        else:
-            if(ryu_version == 382):
-                data['version'] = 40  #1.1.382 version
-            else:
-                data['version'] = 47 #1.1.924 version
         
         data['enable_file_log'] = bool('true')
         data['backend_threading'] = 'Auto'
@@ -119,12 +117,14 @@ class RyujinxMainlineGenerator(Generator):
             data['res_scale'] = 1
 
         data['res_scale_custom'] = 1
+        data['scaling_filter'] = 'Fsr'
+        data['scaling_filter_level'] = 80
 
         if system.isOptSet('max_anisotropy'):
             data['max_anisotropy'] = int(system.config["max_anisotropy"])
         else:
             data['max_anisotropy'] = -1 
-
+            
         if system.isOptSet('aspect_ratio'):
             data['aspect_ratio'] = system.config["aspect_ratio"]
         else:
@@ -641,8 +641,6 @@ class RyujinxMainlineGenerator(Generator):
             data['graphics_backend'] = system.config["ryu_backend"]
         else:
             data['graphics_backend'] = 'Vulkan'
-
-        data['preferred_gpu'] = ""
 
         with open(batoceraFiles.CONF + '/Ryujinx/BeforeRyu.json', "w") as outfile:
             outfile.write(json.dumps(data, indent=2))
